@@ -1,0 +1,72 @@
+# Initialization
+log 	equilibration.log
+
+units           real
+dimension       3
+boundary        p p p
+atom_style      full
+bond_style	    harmonic
+angle_style     harmonic
+
+
+# Atom definition
+read_data       water.data
+
+
+group           water type 1 2 
+
+
+
+mass 1 1.008000 # H
+mass 2 15.999000 # O
+
+# Force field
+
+pair_style      lj/cut/tip4p/cut 2 1 1 1 0.15 12.0
+
+pair_coeff      1 1 0.0 1.0
+pair_coeff      2 2 0.1550 3.1536
+
+pair_coeff      1 2 0.0 2.32 
+
+#pair_modify     shift yes mix arithmetic
+
+
+bond_coeff 1 450.0 0.9574       # H-O
+
+
+
+angle_coeff 1 55.0 104.52      # H-O-H
+
+ 
+min_style	    sd
+minimize	    1.0e-4 1.0e-6 1000 100000
+
+
+
+
+
+
+
+# Temperature and pressure control
+thermo_style    custom step temp pe ke etotal press vol density
+thermo          100
+dump            1 all atom 1000 water2.lammpstrj
+restart	    2500000 water.restart
+ 
+fix		1 water  nvt temp 300.0 300.0 100.0
+fix 		tem all temp/rescale 10 300 300 0.1 1.05
+
+timestep        1.0
+run             500000
+
+unfix 1
+
+fix        hh water npt temp 300.0 300.0 100.0 iso 1.0 1.0 1000.0 
+fix 		tem all temp/rescale 10 300 300 0.1 1.05
+timestep        1.0
+run             2000000
+
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes

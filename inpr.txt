@@ -1,0 +1,70 @@
+# Initialization
+
+log 		production.log
+units           real
+dimension       3
+boundary        p p p
+atom_style      full
+bond_style	    harmonic
+angle_style     harmonic
+
+
+# Atom definition
+#read_restart       gra.restart
+read_restart       gra.restart.2500000
+
+group           graphene type 1
+group           water type 2 3
+group           all type 1 2 3
+
+mass 1 12.010700 # C 
+mass 2 1.008000 # H
+mass 3 15.999000 # O
+
+# Force field
+pair_style      lj/cut 2.5
+pair_style      lj/cut/tip4p/cut 3 2 2 2 0.15 12.0
+pair_coeff      1 1 0.066 3.40 2.5
+pair_coeff      2 2 0.0 1.0
+pair_coeff      3 3 0.008 3.1589
+pair_coeff      1 3 0.1586   3.422 
+pair_coeff      1 2 0.0 2.54 
+pair_coeff      2 3 0.0 2.32 
+
+#pair_modify     shift yes mix arithmetic
+
+bond_coeff 1 469 1.4      # C-C
+bond_coeff 2 450.0 0.9574       # H-O
+
+
+angle_coeff 1 63 120      # C-C-C
+angle_coeff 2 55.0 104.52      # H-O-H
+
+ 
+
+fix         5 graphene setforce 0.0 0.0 0.0
+
+velocity        water create 300.0 12345
+
+#Compute water diffusivity
+compute         1 water msd
+fix             2 water ave/time 1 100 1000 c_1[*] file msd1.water
+
+
+# Temperature and pressure control
+thermo_style    custom step temp pe ke etotal press vol density
+thermo          100
+dump            1 all atom 100000 production.lammpstrj
+restart	    5000000 gra1.restart
+ 
+fix		1 water  nvt temp 300.0 300.0 100.0
+fix 		tem all temp/rescale 10 300 300 0.1 1.05
+
+timestep        1.0
+run             5000000
+
+
+
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes
